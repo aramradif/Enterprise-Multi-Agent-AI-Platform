@@ -1,5 +1,3 @@
-import json
-
 from openai import AsyncOpenAI
 
 from app.agents.base import BaseAgent
@@ -44,51 +42,31 @@ Create a plan with:
 User request:
 
 {request.task}
-
-Return valid JSON only in this format:
-
-{{
-  "objective": "...",
-  "steps": [
-    {{
-      "step_number": 1,
-      "title": "...",
-      "description": "...",
-      "assigned_agent": "..."
-    }}
-  ]
-}}
 """
 
-        response = await self.client.responses.create(
+        response = await self.client.responses.parse(
             model=self.settings.default_model,
             input=prompt,
+            text_format=ExecutionPlan,
         )
 
-        raw_output = response.output_text
+        for output in response.output:
+            if output.type != "message":
+                continue
 
-        if not raw_output or not raw_output.strip():
-            raise RuntimeError(
-                "Planning Agent received an empty response from the model."
-            )
+            for item in output.content:
+                if item.type != "output_text":
+                    continue
 
-        clean_output = raw_output.strip()
+                if item.parsed is None:
+                    raise RuntimeError(
+                        "Planning Agent did not return a parsed execution plan."
+                    )
 
-        if clean_output.startswith("```json"):
-            clean_output = clean_output[len("```json"):].strip()
-        elif clean_output.startswith("```"):
-            clean_output = clean_output[3:].strip()
+                plan = item.parsed
 
-        if clean_output.endswith("```"):
-            clean_output = clean_output[:-3].strip()
+                return plan.model_dump_json(indent=2)
 
-        try:
-            plan_data = json.loads(clean_output)
-        except json.JSONDecodeError as exc:
-            raise RuntimeError(
-                f"Planning Agent returned invalid JSON: {raw_output}"
-            ) from exc
-
-        plan = ExecutionPlan.model_validate(plan_data)
-
-        return plan.model_dump_json(indent=2)
+        raise RuntimeError(
+            "Planning Agent returned no structured execution plan."
+        )
