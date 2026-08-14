@@ -1,11 +1,12 @@
 import asyncio
 import json
+import pytest
 
 from app.agents.planning_agent import PlanningAgent
 from app.models.agent import AgentRequest, AgentStatus
 from app.models.plan import ExecutionPlan
 
-
+@pytest.mark.integration
 def test_planning_agent_returns_valid_execution_plan() -> None:
     request = AgentRequest(
         task=(
