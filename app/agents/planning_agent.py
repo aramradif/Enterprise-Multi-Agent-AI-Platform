@@ -12,14 +12,18 @@ class PlanningAgent(BaseAgent):
     description = "Creates structured execution plans for complex user tasks."
 
     def __init__(self) -> None:
-        super().__init__()
+     super().__init__()
 
-        self.client = AsyncOpenAI(
-            api_key=self.settings.openai_api_key
-        )
+     self.client: AsyncOpenAI | None = None
 
     async def execute(self, request: AgentRequest) -> str:
+        if self.client is None:
+            self.client = AsyncOpenAI(
+                api_key=self.settings.openai_api_key
+            )
+
         prompt = f"""
+
 You are the Planning Agent in an enterprise multi-agent AI platform.
 
 Your job is to break the user's request into a clear execution plan.
