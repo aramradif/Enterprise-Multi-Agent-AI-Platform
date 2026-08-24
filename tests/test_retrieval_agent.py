@@ -1,17 +1,46 @@
 import asyncio
-import json
 
 from app.agents.retrieval_agent import RetrievalAgent
 from app.models.agent import AgentRequest, AgentStatus
+from app.models.retrieval import RetrievedDocument, RetrievalResult
+from app.retrieval.service import RetrievalService
 
 
-def test_retrieval_agent_returns_documents() -> None:
+class FakeVectorStore:
+    """Deterministic vector store used for unit testing."""
+
+    async def search(
+        self,
+        query: str,
+        limit: int = 5,
+    ) -> list[RetrievedDocument]:
+        return [
+            RetrievedDocument(
+                content=(
+                    "The company identified liquidity risk "
+                    "and market volatility."
+                ),
+                source="financial-report.txt",
+                score=0.88,
+            )
+        ]
+
+
+def test_retrieval_agent_returns_semantic_results() -> None:
+    retrieval_service = RetrievalService(
+        vector_store=FakeVectorStore()
+    )
+
+    agent = RetrievalAgent(
+        retrieval_service=retrieval_service
+    )
+
     request = AgentRequest(
-        task="Analyze quarterly financial risks"
+        task="What financial risks were identified?"
     )
 
     result = asyncio.run(
-        RetrievalAgent().run(request)
+        agent.run(request)
     )
 
     assert result.agent_name == "retrieval-agent"
@@ -19,9 +48,17 @@ def test_retrieval_agent_returns_documents() -> None:
     assert result.error is None
     assert result.output is not None
 
-    retrieval_data = json.loads(result.output)
+    retrieval_result = RetrievalResult.model_validate_json(
+        result.output
+    )
 
-    assert retrieval_data["query"] == request.task
-    assert len(retrieval_data["documents"]) == 2
-    assert retrieval_data["documents"][0]["source"] == "sample-financial-report"
-    assert retrieval_data["documents"][0]["score"] == 0.95
+    assert retrieval_result.query == request.task
+    assert len(retrieval_result.documents) == 1
+    assert (
+        retrieval_result.documents[0].source
+        == "financial-report.txt"
+    )
+    assert (
+        "liquidity risk"
+        in retrieval_result.documents[0].content.lower()
+    )

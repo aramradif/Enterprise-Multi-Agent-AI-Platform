@@ -1,34 +1,29 @@
-from app.models.retrieval import RetrievedDocument, RetrievalResult
+from app.models.retrieval import RetrievalResult
+from app.retrieval.vector_store import VectorStoreService
 
 
 class RetrievalService:
     """Retrieval abstraction for enterprise knowledge access."""
 
-    async def search(self, query: str) -> RetrievalResult:
-        """Return relevant documents for a query.
+    def __init__(
+        self,
+        vector_store: VectorStoreService | None = None,
+    ) -> None:
+        self.vector_store = (
+            vector_store or VectorStoreService()
+        )
 
-        This initial implementation is intentionally local.
-        ChromaDB integration will replace it later.
-        """
+    async def search(
+        self,
+        query: str,
+        limit: int = 5,
+    ) -> RetrievalResult:
+        """Retrieve semantically relevant enterprise knowledge."""
 
-        documents = [
-            RetrievedDocument(
-                content=(
-                    "Quarterly financial reports contain revenue, "
-                    "operating expenses, profit, cash flow, and risk disclosures."
-                ),
-                source="sample-financial-report",
-                score=0.95,
-            ),
-            RetrievedDocument(
-                content=(
-                    "Risk analysis should consider liquidity, revenue concentration, "
-                    "operating margin changes, and external market conditions."
-                ),
-                source="sample-risk-guidance",
-                score=0.90,
-            ),
-        ]
+        documents = await self.vector_store.search(
+            query=query,
+            limit=limit,
+        )
 
         return RetrievalResult(
             query=query,
