@@ -48,7 +48,9 @@ class SupervisorAgent(BaseAgent):
 
         # Step 2: Execute currently supported plan steps.
         for plan_step in execution_plan.steps:
-            if plan_step.assigned_agent != "retrieval-agent":
+            if not self.registry.is_registered(
+                plan_step.assigned_agent
+            ):
                 continue
 
             agent = self.registry.create(

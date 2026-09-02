@@ -35,6 +35,14 @@ class AgentRegistry:
 
         return factory()
 
+    def is_registered(
+        self,
+        agent_name: str,
+    ) -> bool:
+        """Return whether an agent is registered."""
+
+        return agent_name in self._factories
+
     def available_agents(self) -> list[str]:
         """Return all registered agent names."""
 

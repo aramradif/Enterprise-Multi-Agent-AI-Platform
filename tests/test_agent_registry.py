@@ -23,3 +23,16 @@ def test_registry_raises_for_unknown_agent() -> None:
 
     with pytest.raises(KeyError):
         registry.create("unknown-agent")
+
+
+def test_registry_reports_registered_agent() -> None:
+    registry = build_default_registry()
+
+    assert registry.is_registered("planning-agent") is True
+    assert registry.is_registered("retrieval-agent") is True
+
+
+def test_registry_reports_unregistered_agent() -> None:
+    registry = build_default_registry()
+
+    assert registry.is_registered("analysis-agent") is False

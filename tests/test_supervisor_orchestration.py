@@ -61,6 +61,12 @@ class FakeRetrievalAgent:
 class FakeRegistry:
     """Minimal registry used to test Supervisor orchestration."""
 
+    def is_registered(self, agent_name: str) -> bool:
+        return agent_name in {
+            "planning-agent",
+            "retrieval-agent",
+        }
+
     def create(self, agent_name: str):
         if agent_name == "planning-agent":
             return FakePlanningAgent()
