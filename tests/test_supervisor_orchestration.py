@@ -57,7 +57,23 @@ class FakeRetrievalAgent:
             execution_time_ms=20.0,
         )
 
+class FakeAnalysisAgent:
+    """Deterministic Analysis Agent for orchestration testing."""
 
+    async def run(
+        self,
+        request: AgentRequest,
+    ) -> AgentResult:
+        return AgentResult(
+            agent_name="analysis-agent",
+            status=AgentStatus.COMPLETED,
+            output=(
+                "The financial information indicates "
+                "liquidity risk and market volatility."
+            ),
+            execution_time_ms=30.0,
+        )
+    
 class FakeRegistry:
     """Minimal registry used to test Supervisor orchestration."""
 
@@ -65,6 +81,7 @@ class FakeRegistry:
         return agent_name in {
             "planning-agent",
             "retrieval-agent",
+            "analysis-agent",
         }
 
     def create(self, agent_name: str):
@@ -73,6 +90,9 @@ class FakeRegistry:
 
         if agent_name == "retrieval-agent":
             return FakeRetrievalAgent()
+
+        if agent_name == "analysis-agent":
+            return FakeAnalysisAgent()
 
         raise KeyError(
             f"Agent not registered: {agent_name}"
@@ -105,8 +125,8 @@ def test_supervisor_executes_retrieval_step() -> None:
         "Analyze enterprise financial risks"
     )
 
-    assert len(workflow.steps) == 1
-    assert workflow.completed_steps == 1
+    assert len(workflow.steps) == 2
+    assert workflow.completed_steps == 2
     assert workflow.failed_steps == 0
 
     step = workflow.steps[0]
@@ -122,3 +142,17 @@ def test_supervisor_executes_retrieval_step() -> None:
         "Liquidity risk"
         in step.result.output
     )
+
+    analysis_step = workflow.steps[1]
+
+    assert analysis_step.step_number == 2
+    assert analysis_step.title == "Analyze financial risks"
+    assert analysis_step.assigned_agent == "analysis-agent"
+
+    assert analysis_step.result.agent_name == "analysis-agent"
+    assert analysis_step.result.status == AgentStatus.COMPLETED
+
+    assert (
+        "liquidity risk"
+        in analysis_step.result.output
+)

@@ -1,6 +1,7 @@
 from collections.abc import Callable
 
 from app.agents.base import BaseAgent
+from app.agents.analysis_agent import AnalysisAgent
 from app.agents.planning_agent import PlanningAgent
 from app.agents.retrieval_agent import RetrievalAgent
 
@@ -62,6 +63,11 @@ def build_default_registry() -> AgentRegistry:
     registry.register(
         RetrievalAgent.name,
         RetrievalAgent,
+    )
+
+    registry.register(
+        AnalysisAgent.name,
+        AnalysisAgent,
     )
 
     return registry
