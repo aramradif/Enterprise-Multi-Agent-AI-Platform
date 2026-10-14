@@ -42,6 +42,7 @@ class SupervisorAgent(BaseAgent):
         )
 
         workflow_steps: list[WorkflowStepResult] = []
+        retrieval_context: str | None = None
 
         completed_steps = 0
         failed_steps = 0
@@ -57,13 +58,31 @@ class SupervisorAgent(BaseAgent):
                 plan_step.assigned_agent
             )
 
+            step_task = plan_step.description
+
+            if (
+                plan_step.assigned_agent == "analysis-agent"
+                and retrieval_context is not None
+            ):
+                step_task = (
+                    f"{plan_step.description}\n\n"
+                    f"Retrieved information:\n{retrieval_context}"
+                )         
+
             step_request = AgentRequest(
-                task=plan_step.description
+                task=step_task
             )
 
             agent_result = await agent.run(
                 step_request
             )
+
+            if (
+                plan_step.assigned_agent == "retrieval-agent"
+                and agent_result.status == AgentStatus.COMPLETED
+                and agent_result.output is not None
+            ):
+                retrieval_context = agent_result.output
 
             workflow_steps.append(
                 WorkflowStepResult(

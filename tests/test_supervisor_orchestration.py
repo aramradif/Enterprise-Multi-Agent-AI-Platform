@@ -1,4 +1,5 @@
 import asyncio
+from urllib import request
 
 from app.agents.supervisor_agent import SupervisorAgent
 from app.models.agent import AgentRequest, AgentResult, AgentStatus
@@ -64,6 +65,11 @@ class FakeAnalysisAgent:
         self,
         request: AgentRequest,
     ) -> AgentResult:
+        
+        # Verify Retrieval output reaches the Analysis Agent.
+        assert "Retrieved information:" in request.task
+        assert "Liquidity risk and market volatility" in request.task
+        
         return AgentResult(
             agent_name="analysis-agent",
             status=AgentStatus.COMPLETED,
